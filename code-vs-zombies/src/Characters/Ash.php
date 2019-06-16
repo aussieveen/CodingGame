@@ -29,8 +29,6 @@ class Ash extends Character implements Moveable, Attacker
     {
         parent::__construct($posX, $posY);
         $this->humans = $humans;
-        new Debug($humans);
-        new Debug("");
         $this->zombies = $zombies;
     }
 
@@ -83,6 +81,7 @@ class Ash extends Character implements Moveable, Attacker
             }
         }
         new Debug($avoidableDeaths);
+        ksort($avoidableDeaths);
         return $avoidableDeaths;
     }
 
