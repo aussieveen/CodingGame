@@ -1,7 +1,7 @@
 <?php
 namespace CodingGame\CodeVsZombies\Characters {
-use CodeInGame\LegendsOfCodeMagic\Debug;
 use CodingGame\CodeVsZombies\Geometry;
+use CodingGame\CodeVsZombies\Map;
 class Ash extends Character implements Moveable, Attacker
 {
     use Geometry;
@@ -10,18 +10,19 @@ class Ash extends Character implements Moveable, Attacker
     private $futureX;
     private $futureY;
     /**
-     * @var array
+     * @var Map
      */
-    private $humans;
+    private $map;
     /**
-     * @var array
+     * Ash constructor.
+     * @param int $posX
+     * @param int $posY
+     * @param Map $map
      */
-    private $zombies;
-    public function __construct(int $posX, int $posY, array $humans, array $zombies)
+    public function __construct(int $posX, int $posY, Map $map)
     {
         parent::__construct($posX, $posY);
-        $this->humans = $humans;
-        $this->zombies = $zombies;
+        $this->map = $map;
     }
     public function getFutureX() : int
     {
@@ -41,35 +42,26 @@ class Ash extends Character implements Moveable, Attacker
     }
     public function determineMove()
     {
-        if (count($this->humans) === 1) {
-            $this->futureX = $this->humans[0]->getPosX();
-            $this->futureY = $this->humans[0]->getPosY();
-            return;
+        $humans = $this->map->getHumans();
+        $zombies = $this->map->getZombies();
+        foreach ([$humans, $zombies] as $characters) {
+            if (count($characters) === 1) {
+                $this->futureX = $characters[0]->getPosX();
+                $this->futureY = $characters[0]->getPosY();
+                return;
+            }
         }
-        $avoidableDeaths = $this->getAvoidableDeaths();
-        $humanToSave = reset($avoidableDeaths);
-        $this->futureX = $humanToSave->getPosX();
-        $this->futureY = $humanToSave->getPosY();
-    }
-    private function getAvoidableDeaths()
-    {
-        $avoidableDeaths = [];
-        foreach ($this->humans as $human) {
-            $timeToRescue = $this->distanceBetweenPoints($this, $human) / self::MOVE_DISTANCE;
-            foreach ($this->zombies as $zombie) {
-                $timeToDeath = $this->distanceBetweenPoints($human, $zombie) / $zombie->getMoveDistance();
-                switch ($timeToDeath <=> $timeToRescue) {
-                    case 1:
-                        $avoidableDeaths[$timeToDeath] = $human;
-                    case -1:
-                        continue 2;
-                        break;
+        $humanDeathOrder = $this->map->getDeathOrder();
+        foreach ($humanDeathOrder as $timeToDeath => $humans) {
+            foreach ($humans as $human) {
+                $timeToRescue = ($this->distanceBetweenPoints($this, $human) - 2000) / self::MOVE_DISTANCE;
+                if ($timeToDeath > $timeToRescue) {
+                    $this->futureX = $human->getPosX();
+                    $this->futureY = $human->getPosY();
+                    break 2;
                 }
             }
         }
-        new Debug($avoidableDeaths);
-        ksort($avoidableDeaths);
-        return $avoidableDeaths;
     }
 }
 }
@@ -110,17 +102,6 @@ abstract class Character
     public function getPosX() : int
     {
         return $this->posX;
-    }
-}
-}
-
-namespace CodingGame\CodeVsZombies {
-use CodingGame\CodeVsZombies\Characters\Character;
-trait Geometry
-{
-    function distanceBetweenPoints(Character $char1, Character $char2)
-    {
-        return sqrt(pow($char1->getPosX() + $char2->getPosX(), 2) + pow($char1->getPosY() + $char2->getPosY(), 2));
     }
 }
 }
@@ -221,7 +202,69 @@ class Debug
 }
 
 namespace CodingGame\CodeVsZombies {
-use CodingGame\CodeVsZombies\State;
+use CodingGame\CodeVsZombies\Characters\Character;
+trait Geometry
+{
+    function distanceBetweenPoints(Character $char1, Character $char2) : float
+    {
+        return sqrt(pow($char1->getPosX() - $char2->getPosX(), 2) + pow($char1->getPosY() - $char2->getPosY(), 2));
+    }
+}
+}
+
+namespace CodingGame\CodeVsZombies {
+use CodingGame\CodeVsZombies\Characters\Human;
+use CodingGame\CodeVsZombies\Characters\Zombie;
+class Map
+{
+    use Geometry;
+    private $zombies;
+    private $humans;
+    private $deathOrder;
+    public function __construct()
+    {
+        $this->deathOrder = [];
+    }
+    public function addZombie(Zombie $zombie)
+    {
+        $this->zombies[] = $zombie;
+    }
+    public function addHuman(Human $human)
+    {
+        $this->humans[] = $human;
+    }
+    public function calculateDeathOrder() : void
+    {
+        foreach ($this->zombies as $zombie) {
+            $timeToTarget = 1000000;
+            foreach ($this->humans as $human) {
+                $killTime = ceil($this->distanceBetweenPoints($human, $zombie) / $zombie->getMoveDistance());
+                if ($killTime < $timeToTarget) {
+                    $timeToTarget = $killTime;
+                    $targetHuman = $human;
+                }
+                $this->deathOrder[$timeToTarget][] = $targetHuman;
+            }
+        }
+        ksort($this->deathOrder);
+    }
+    public function getDeathOrder()
+    {
+        $this->calculateDeathOrder();
+        return $this->deathOrder;
+    }
+    public function getZombies() : array
+    {
+        return $this->zombies;
+    }
+    public function getHumans() : array
+    {
+        return $this->humans;
+    }
+}
+}
+
+namespace CodingGame\CodeVsZombies {
 $state = new State();
 // game loop
 while (TRUE) {
@@ -242,18 +285,19 @@ class State
     private $zombies;
     public function update()
     {
+        $map = new Map();
         fscanf(STDIN, "%d %d", $x, $y);
         fscanf(STDIN, "%d", $humanCount);
         for ($i = 0; $i < $humanCount; $i++) {
             fscanf(STDIN, "%d %d %d", $humanId, $humanX, $humanY);
-            $this->humans[] = new Human($humanId, $humanX, $humanY);
+            $map->addHuman(new Human($humanId, $humanX, $humanY));
         }
         fscanf(STDIN, "%d", $zombieCount);
         for ($i = 0; $i < $zombieCount; $i++) {
             fscanf(STDIN, "%d %d %d %d %d", $zombieId, $zombieX, $zombieY, $zombieXNext, $zombieYNext);
-            $this->zombies[] = new Zombie($zombieId, $zombieX, $zombieY, $zombieXNext, $zombieYNext);
+            $map->addZombie(new Zombie($zombieId, $zombieX, $zombieY, $zombieXNext, $zombieYNext));
         }
-        $this->ash = new Ash($x, $y, $this->humans, $this->zombies);
+        $this->ash = new Ash($x, $y, $map);
         $this->ash->determineMove();
     }
     /**

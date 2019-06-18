@@ -16,6 +16,8 @@ class State
     private $zombies;
 
     public function update(){
+
+        $map = new Map();
         fscanf(STDIN, "%d %d",
             $x,
             $y
@@ -31,7 +33,7 @@ class State
                 $humanX,
                 $humanY
             );
-            $this->humans[] = new Human($humanId, $humanX, $humanY);
+            $map->addHuman(new Human($humanId, $humanX, $humanY));
         }
 
         fscanf(STDIN, "%d",
@@ -46,10 +48,10 @@ class State
                 $zombieXNext,
                 $zombieYNext
             );
-            $this->zombies[] = new Zombie($zombieId,$zombieX,$zombieY,$zombieXNext, $zombieYNext);
+            $map->addZombie(new Zombie($zombieId,$zombieX,$zombieY,$zombieXNext, $zombieYNext));
         }
 
-        $this->ash = new Ash($x, $y, $this->humans, $this->zombies);
+        $this->ash = new Ash($x, $y, $map);
         $this->ash->determineMove();
 
 

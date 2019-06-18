@@ -2,8 +2,6 @@
 
 namespace CodingGame\CodeVsZombies;
 
-use CodingGame\CodeVsZombies\State;
-
 $state = new State();
 
 // game loop

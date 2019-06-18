@@ -3,8 +3,8 @@
 
 namespace CodingGame\CodeVsZombies\Characters;
 
-use CodeInGame\LegendsOfCodeMagic\Debug;
 use CodingGame\CodeVsZombies\Geometry;
+use CodingGame\CodeVsZombies\Map;
 
 class Ash extends Character implements Moveable, Attacker
 {
@@ -16,20 +16,22 @@ class Ash extends Character implements Moveable, Attacker
 
     private $futureX;
     private $futureY;
-    /**
-     * @var array
-     */
-    private $humans;
-    /**
-     * @var array
-     */
-    private $zombies;
 
-    public function __construct(int $posX, int $posY, array $humans, array $zombies)
+    /**
+     * @var Map
+     */
+    private $map;
+
+    /**
+     * Ash constructor.
+     * @param int $posX
+     * @param int $posY
+     * @param Map $map
+     */
+    public function __construct(int $posX, int $posY, Map $map)
     {
         parent::__construct($posX, $posY);
-        $this->humans = $humans;
-        $this->zombies = $zombies;
+        $this->map = $map;
     }
 
     public function getFutureX():int
@@ -53,36 +55,28 @@ class Ash extends Character implements Moveable, Attacker
     }
 
     public function determineMove(){
-        if (count($this->humans) === 1){
-            $this->futureX = $this->humans[0]->getPosX();
-            $this->futureY = $this->humans[0]->getPosY();
-            return;
+        $humans = $this->map->getHumans();
+        $zombies = $this->map->getZombies();
+        foreach([$humans,$zombies] as $characters){
+            if (count($characters) === 1){
+                $this->futureX = $characters[0]->getPosX();
+                $this->futureY = $characters[0]->getPosY();
+
+                return;
+            }
         }
 
-        $avoidableDeaths = $this->getAvoidableDeaths();
-        $humanToSave = reset($avoidableDeaths);
-        $this->futureX = $humanToSave->getPosX();
-        $this->futureY = $humanToSave->getPosY();
-    }
-
-    private function getAvoidableDeaths(){
-        $avoidableDeaths = [];
-        foreach($this->humans as $human){
-            $timeToRescue = $this->distanceBetweenPoints($this, $human) / self::MOVE_DISTANCE;
-            foreach($this->zombies as $zombie){
-                $timeToDeath = $this->distanceBetweenPoints($human, $zombie) / $zombie->getMoveDistance();
-                switch($timeToDeath <=> $timeToRescue){
-                    case 1:
-                        $avoidableDeaths[$timeToDeath] = $human;
-                    case -1:
-                        continue 2;
-                        break;
+        $humanDeathOrder = $this->map->getDeathOrder();
+        foreach($humanDeathOrder as $timeToDeath => $humans){
+            foreach($humans as $human) {
+                $timeToRescue = (($this->distanceBetweenPoints($this, $human)) - 2000) / self::MOVE_DISTANCE;
+                if ($timeToDeath > $timeToRescue) {
+                    $this->futureX = $human->getPosX();
+                    $this->futureY = $human->getPosY();
+                    break 2;
                 }
             }
         }
-        new Debug($avoidableDeaths);
-        ksort($avoidableDeaths);
-        return $avoidableDeaths;
     }
 
 }
