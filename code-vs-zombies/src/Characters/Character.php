@@ -8,7 +8,6 @@ abstract class Character{
 
     /**
      * Character constructor.
-     * @param int $id
      * @param int $posX
      * @param int $posY
      */

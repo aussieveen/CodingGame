@@ -3,9 +3,11 @@
 
 namespace CodingGame\CodeVsZombies\Characters;
 
+use CodingGame\CodeVsZombies\Geometry;
 
 class Zombie extends Character implements Moveable, Identifiable, Attacker
 {
+    use Geometry;
 
     const MOVE_DISTANCE = 400;
     const KILL_DISTANCE = 400;
@@ -13,13 +15,22 @@ class Zombie extends Character implements Moveable, Identifiable, Attacker
     private $id;
     private $futureX;
     private $futureY;
+    private $targetId;
+    private $timeToTarget = 100000;
 
-    public function __construct($id, $posX, $posY, $futureX, $futureY)
+    public function __construct(int $id, int $posX, int $posY, int $futureX, int $futureY, Array $humans)
     {
         parent::__construct($posX, $posY);
         $this->id = $id;
         $this->futureX = $futureX;
         $this->futureY = $futureY;
+        foreach($humans as $human){
+            $killTime = ceil($this->distanceBetweenCharacters($human, $this) / self::MOVE_DISTANCE);
+            if ($killTime < $this->timeToTarget){
+                $this->timeToTarget = $killTime;
+                $this->targetId = $human->getId();
+            }
+        }
     }
 
     public function getFutureX():int
@@ -30,11 +41,6 @@ class Zombie extends Character implements Moveable, Identifiable, Attacker
     public function getFutureY():int
     {
         return $this->futureY;
-    }
-
-    public function setId(int $id):void
-    {
-        $this->id = $id;
     }
 
     public function getId():int
@@ -50,5 +56,15 @@ class Zombie extends Character implements Moveable, Identifiable, Attacker
     public function getKillDistance():int
     {
         return self::KILL_DISTANCE;
+    }
+
+    public function getTimeToTarget():int
+    {
+        return $this->timeToTarget;
+    }
+
+    public function getTargetId():int
+    {
+        return $this->targetId;
     }
 }

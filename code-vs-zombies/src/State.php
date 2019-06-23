@@ -48,7 +48,8 @@ class State
                 $zombieXNext,
                 $zombieYNext
             );
-            $map->addZombie(new Zombie($zombieId,$zombieX,$zombieY,$zombieXNext, $zombieYNext));
+            $zombie = new Zombie($zombieId,$zombieX,$zombieY,$zombieXNext, $zombieYNext, $map->getHumans());
+            $map->addZombie($zombie);
         }
 
         $this->ash = new Ash($x, $y, $map);

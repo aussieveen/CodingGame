@@ -1,6 +1,6 @@
 <?php
 
-namespace CodeInGame\LegendsOfCodeMagic;
+namespace CodeInGame\CodeVsZombies;
 
 class Debug
 {

@@ -3,6 +3,7 @@
 
 namespace CodingGame\CodeVsZombies;
 
+use CodeInGame\CodeVsZombies\Debug;
 use CodingGame\CodeVsZombies\Characters\Human;
 use CodingGame\CodeVsZombies\Characters\Zombie;
 
@@ -22,33 +23,19 @@ class Map
 
     public function addZombie(Zombie $zombie)
     {
-        $this->zombies[] = $zombie;
+        $this->zombies[$zombie->getId()] = $zombie;
     }
 
     public function addHuman(Human $human)
     {
-        $this->humans[] = $human;
-    }
-
-    public function calculateDeathOrder():void
-    {
-        foreach($this->zombies as $zombie){
-            $timeToTarget = 1000000;
-            foreach($this->humans as $human){
-                $killTime = ceil($this->distanceBetweenPoints($human, $zombie) / $zombie->getMoveDistance());
-                if ($killTime < $timeToTarget){
-                    $timeToTarget = $killTime;
-                    $targetHuman = $human;
-                }
-                $this->deathOrder[$timeToTarget][] = $targetHuman;
-            }
-        }
-        ksort($this->deathOrder);
+        $this->humans[$human->getId()] = $human;
     }
 
     public function getDeathOrder()
     {
-        $this->calculateDeathOrder();
+        if (empty($this->deathOrder)){
+            $this->calculateDeathOrder();
+        }
         return $this->deathOrder;
     }
 
@@ -60,6 +47,23 @@ class Map
     public function getHumans():array
     {
         return $this->humans;
+    }
+
+    private function calculateDeathOrder():void
+    {
+        foreach($this->zombies as $zombieId => $zombie){
+            $this->deathOrder[$zombie->getTimeToTarget()][$zombie->getTargetId()][] = $zombieId;
+        }
+        ksort($this->deathOrder);
+    }
+
+    public function getHumanById(int $id)
+    {
+        return $this->humans[$id] ?? false;
+    }
+
+    public function getZombieById(int $id){
+        return $this->zombies[$id] ?? false;
     }
 
 }

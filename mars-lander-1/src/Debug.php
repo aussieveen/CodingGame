@@ -1,6 +1,6 @@
 <?php
 
-namespace CodeInGame\LegendsOfCodeMagic;
+namespace CodingGame\MarsLander;
 
 class Debug
 {
