@@ -1,44 +1,39 @@
 <?php
 namespace CodingGame\CodeVsZombies\Characters {
-use CodingGame\CodeVsZombies\Geometry;
+use CodeInGame\CodeVsZombies\Debug;
+use CodingGame\CodeVsZombies\DeathOrder;
+use CodingGame\CodeVsZombies\Geometry\Coordinates;
+use CodingGame\CodeVsZombies\Geometry\Geometry;
 use CodingGame\CodeVsZombies\Map;
 class Ash extends Character implements Moveable, Attacker
 {
     use Geometry;
     const MOVE_DISTANCE = 1000;
     const KILL_DISTANCE = 2000;
-    private $futureX;
-    private $futureY;
+    private $futureCoodinates;
     /**
      * @var Map
      */
     private $map;
     private $moveNotSet;
+    private $deathOrder;
     /**
      * Ash constructor.
-     * @param int $posX
-     * @param int $posY
+     * @param Coordinates $coordinates
      * @param Map $map
+     * @internal param int $posX
+     * @internal param int $posY
      */
-    public function __construct(int $posX, int $posY, Map $map)
+    public function __construct(Coordinates $coordinates, Map $map)
     {
-        parent::__construct($posX, $posY);
+        parent::__construct($coordinates);
         $this->map = $map;
+        $this->deathOrder = new DeathOrder($map);
         $this->moveNotSet = true;
     }
-    /**
-     * @return int
-     */
-    public function getFutureX() : int
+    public function getFutureCoordinates() : Coordinates
     {
-        return $this->futureX;
-    }
-    /**
-     * @return int
-     */
-    public function getFutureY() : int
-    {
-        return $this->futureY;
+        return $this->futureCoodinates;
     }
     /**
      * @return int
@@ -54,6 +49,9 @@ class Ash extends Character implements Moveable, Attacker
     {
         return self::KILL_DISTANCE;
     }
+    /**
+     * Loops through strategy functions until the coordinates Ash should move to are set.
+     */
     public function determineMove()
     {
         $this->targetLastZombie();
@@ -70,73 +68,68 @@ class Ash extends Character implements Moveable, Attacker
             $this->targetLargestZombieCluster();
         }
     }
+    /**
+     * Only one zombie lives. Kill it!
+     */
     private function targetLastZombie()
     {
-        $zombies = $this->map->getZombies();
-        if (count($zombies) === 1) {
-            $zombie = reset($zombies);
-            $this->futureX = $zombie->getPosX();
-            $this->futureY = $zombie->getPosY();
+        $this->moveToLastCharacter(...$this->map->getZombies());
+    }
+    /**
+     * Move to protect the last human on the map
+     */
+    private function protectLastHuman()
+    {
+        $this->moveToLastCharacter(...$this->map->getHumans());
+    }
+    /**
+     * @param Character[] ...$characters
+     */
+    private function moveToLastCharacter(Character ...$characters)
+    {
+        if (count($characters) === 1) {
+            $character = reset($characters);
+            $this->futureCoodinates = $character->getCoordinates();
             $this->moveNotSet = false;
         }
     }
+    /**
+     * Determine if Ash is able to reach all humans before a zombie can. If so, target largest cluster of zombies
+     */
     private function betweenAllHumansAndZombies()
     {
         $humans = $this->map->getHumans();
-        $longestRescueTime = 0;
+        $longestTimeToReachHuman = 0;
         foreach ($humans as $human) {
             $timeToReachHuman = $this->timeToReachCharacter($human);
-            if ($longestRescueTime < $timeToReachHuman) {
-                $longestRescueTime = $timeToReachHuman;
+            if ($longestTimeToReachHuman < $timeToReachHuman) {
+                $longestTimeToReachHuman = $timeToReachHuman;
             }
         }
-        if (array_key_first($this->map->getDeathOrder()) > $longestRescueTime) {
-            $longestKillTime = 10000;
-            $firstDeath = reset($this->map->getDeathOrder());
-            foreach ($firstDeath as $zombies) {
-                foreach ($zombies as $zombieId) {
-                    $zombie = $this->map->getZombieById($zombieId);
-                    $timeToReachZombie = $this->timeToReachCharacter($zombie);
-                    if ($timeToReachZombie < $longestKillTime) {
-                        $targetZombie = $zombie;
-                        $longestKillTime = $timeToReachZombie;
-                    }
-                }
-            }
-            $this->futureX = $targetZombie->getPosX();
-            $this->futureY = $targetZombie->getPosY();
-            $this->moveNotSet = false;
+        if ($this->deathOrder->getSoonestDeath() > $longestTimeToReachHuman) {
+            $this->targetLargestZombieCluster();
         }
     }
-    private function protectLastHuman()
-    {
-        $humans = $this->map->getHumans();
-        if (count($humans) === 1) {
-            $human = reset($humans);
-            $this->futureX = $human->getPosX();
-            $this->futureY = $human->getPosY();
-        }
-    }
-    private function timeToReachCharacter(Character $character)
-    {
-        return ($this->distanceBetweenCharacters($this, $character) - 2000) / self::MOVE_DISTANCE;
-    }
+    /**
+     * Move towards the human nearest to death that can be saved.
+     */
     private function saveClosestHumanToDeath()
     {
-        $humanDeathOrder = $this->map->getDeathOrder();
-        foreach ($humanDeathOrder as $timeToDeath => $humans) {
-            foreach ($humans as $humanId => $zombiesTargetingHuman) {
+        foreach ($this->deathOrder->get() as $timeToDeath => $humanIds) {
+            foreach ($humanIds as $humanId) {
                 $human = $this->map->getHumanById($humanId);
                 $timeToReachHuman = $this->timeToReachCharacter($human);
-                if ($timeToDeath > $timeToReachHuman) {
-                    $this->futureX = $human->getPosX();
-                    $this->futureY = $human->getPosY();
+                if ($timeToDeath >= $timeToReachHuman) {
+                    $this->futureCoodinates = $human->getCoordinates();
                     $this->moveNotSet = false;
                     break 2;
                 }
             }
         }
     }
+    /**
+     * Get the central point of the largest zombie cluster and move towards it.
+     */
     private function targetLargestZombieCluster()
     {
         $zombies = $this->map->getZombies();
@@ -156,10 +149,16 @@ class Ash extends Character implements Moveable, Attacker
                 $largestCluster = $clusterSize;
             }
         }
-        $centroidCoordinates = $this->getCentroidCoordinates(...$targetCluster);
-        $this->futureX = $centroidCoordinates['x'];
-        $this->futureY = $centroidCoordinates['y'];
+        $this->futureCoodinates = $this->getCentroidCoordinates(...$targetCluster);
         $this->moveNotSet = false;
+    }
+    /**
+     * @param Character $character
+     * @return int
+     */
+    private function timeToReachCharacter(Character $character) : int
+    {
+        return ceil(($this->distanceBetweenCharacters($this, $character) - self::KILL_DISTANCE) / self::MOVE_DISTANCE);
     }
 }
 }
@@ -172,50 +171,62 @@ interface Attacker
 }
 
 namespace CodingGame\CodeVsZombies\Characters {
+use CodingGame\CodeVsZombies\Geometry\Coordinates;
 abstract class Character
 {
-    private $posX;
-    private $posY;
+    /**
+     * @var Coordinates
+     */
+    private $coordinates;
     /**
      * Character constructor.
-     * @param int $posX
-     * @param int $posY
+     * @param Coordinates $coordinates
+     * @internal param int $posX
+     * @internal param int $posY
      */
-    public function __construct(int $posX, int $posY)
+    public function __construct(Coordinates $coordinates)
     {
-        $this->posX = $posX;
-        $this->posY = $posY;
+        $this->coordinates = $coordinates;
     }
     /**
-     * @return mixed
+     * @return Coordinates
      */
-    public function getPosY() : int
+    public function getCoordinates() : Coordinates
     {
-        return $this->posY;
+        return $this->coordinates;
     }
     /**
      * @return mixed
      */
     public function getPosX() : int
     {
-        return $this->posX;
+        return $this->coordinates->getX();
+    }
+    /**
+     * @return mixed
+     */
+    public function getPosY() : int
+    {
+        return $this->coordinates->getY();
     }
 }
 }
 
 namespace CodingGame\CodeVsZombies\Characters {
+use CodingGame\CodeVsZombies\Geometry\Coordinates;
 class Human extends Character implements Identifiable
 {
     private $id;
     /**
      * Human constructor.
      * @param int $id
-     * @param int $posX
-     * @param int $posY
+     * @param Coordinates $coordinates
+     * @internal param int $posX
+     * @internal param int $posY
      */
-    public function __construct(int $id, int $posX, int $posY)
+    public function __construct(int $id, Coordinates $coordinates)
     {
-        parent::__construct($posX, $posY);
+        parent::__construct($coordinates);
         $this->id = $id;
     }
     public function getId() : int
@@ -233,32 +244,31 @@ interface Identifiable
 }
 
 namespace CodingGame\CodeVsZombies\Characters {
+use CodingGame\CodeVsZombies\Geometry\Coordinates;
 interface Moveable
 {
-    public function getFutureX() : int;
-    public function getFutureY() : int;
+    public function getFutureCoordinates() : Coordinates;
     public function getMoveDistance() : int;
 }
 }
 
 namespace CodingGame\CodeVsZombies\Characters {
-use CodingGame\CodeVsZombies\Geometry;
+use CodingGame\CodeVsZombies\Geometry\Coordinates;
+use CodingGame\CodeVsZombies\Geometry\Geometry;
 class Zombie extends Character implements Moveable, Identifiable, Attacker
 {
     use Geometry;
     const MOVE_DISTANCE = 400;
     const KILL_DISTANCE = 400;
     private $id;
-    private $futureX;
-    private $futureY;
+    private $futureCoordinates;
     private $targetId;
     private $timeToTarget = 100000;
-    public function __construct(int $id, int $posX, int $posY, int $futureX, int $futureY, array $humans)
+    public function __construct(int $id, Coordinates $currentCoordinates, Coordinates $futureCoordinates, Human ...$humans)
     {
-        parent::__construct($posX, $posY);
+        parent::__construct($currentCoordinates);
         $this->id = $id;
-        $this->futureX = $futureX;
-        $this->futureY = $futureY;
+        $this->futureCoordinates = $futureCoordinates;
         foreach ($humans as $human) {
             $killTime = ceil($this->distanceBetweenCharacters($human, $this) / self::MOVE_DISTANCE);
             if ($killTime < $this->timeToTarget) {
@@ -266,14 +276,6 @@ class Zombie extends Character implements Moveable, Identifiable, Attacker
                 $this->targetId = $human->getId();
             }
         }
-    }
-    public function getFutureX() : int
-    {
-        return $this->futureX;
-    }
-    public function getFutureY() : int
-    {
-        return $this->futureY;
     }
     public function getId() : int
     {
@@ -295,6 +297,32 @@ class Zombie extends Character implements Moveable, Identifiable, Attacker
     {
         return $this->targetId;
     }
+    public function getFutureCoordinates() : Coordinates
+    {
+        return $this->futureCoordinates;
+    }
+}
+}
+
+namespace CodingGame\CodeVsZombies {
+class DeathOrder
+{
+    private $deathOrder;
+    public function __construct(Map $map)
+    {
+        foreach ($map->getZombies() as $zombie) {
+            $this->deathOrder[$zombie->getTimeToTarget()][] = $zombie->getTargetId();
+        }
+        ksort($this->deathOrder);
+    }
+    public function get() : array
+    {
+        return $this->deathOrder;
+    }
+    public function getSoonestDeath()
+    {
+        return array_key_first($this->deathOrder);
+    }
 }
 }
 
@@ -308,7 +336,45 @@ class Debug
 }
 }
 
-namespace CodingGame\CodeVsZombies {
+namespace CodingGame\CodeVsZombies\Geometry {
+class Coordinates
+{
+    /**
+     * @var int
+     */
+    private $x;
+    /**
+     * @var int
+     */
+    private $y;
+    /**
+     * Coordinates constructor.
+     * @param int $x
+     * @param int $y
+     */
+    public function __construct(int $x, int $y)
+    {
+        $this->x = $x;
+        $this->y = $y;
+    }
+    /**
+     * @return int
+     */
+    public function getX() : int
+    {
+        return $this->x;
+    }
+    /**
+     * @return int
+     */
+    public function getY() : int
+    {
+        return $this->y;
+    }
+}
+}
+
+namespace CodingGame\CodeVsZombies\Geometry {
 use CodingGame\CodeVsZombies\Characters\Character;
 trait Geometry
 {
@@ -316,7 +382,7 @@ trait Geometry
     {
         return sqrt(pow($char1->getPosX() - $char2->getPosX(), 2) + pow($char1->getPosY() - $char2->getPosY(), 2));
     }
-    function getCentroidCoordinates(Character ...$characters)
+    function getCentroidCoordinates(Character ...$characters) : Coordinates
     {
         $xSum = 0;
         $ySum = 0;
@@ -324,18 +390,16 @@ trait Geometry
             $xSum += $character->getPosX();
             $ySum += $character->getPosY();
         }
-        return ['x' => $xSum / count($characters), 'y' => $ySum / count($characters)];
+        return new Coordinates($xSum / count($characters), $ySum / count($characters));
     }
 }
 }
 
 namespace CodingGame\CodeVsZombies {
-use CodeInGame\CodeVsZombies\Debug;
 use CodingGame\CodeVsZombies\Characters\Human;
 use CodingGame\CodeVsZombies\Characters\Zombie;
 class Map
 {
-    use Geometry;
     private $zombies;
     private $humans;
     private $deathOrder;
@@ -345,18 +409,11 @@ class Map
     }
     public function addZombie(Zombie $zombie)
     {
-        $this->zombies[$zombie->getId()] = $zombie;
+        $this->zombies[] = $zombie;
     }
     public function addHuman(Human $human)
     {
-        $this->humans[$human->getId()] = $human;
-    }
-    public function getDeathOrder()
-    {
-        if (empty($this->deathOrder)) {
-            $this->calculateDeathOrder();
-        }
-        return $this->deathOrder;
+        $this->humans[] = $human;
     }
     public function getZombies() : array
     {
@@ -366,20 +423,13 @@ class Map
     {
         return $this->humans;
     }
-    private function calculateDeathOrder() : void
+    public function getHumanById(int $id) : Human
     {
-        foreach ($this->zombies as $zombieId => $zombie) {
-            $this->deathOrder[$zombie->getTimeToTarget()][$zombie->getTargetId()][] = $zombieId;
-        }
-        ksort($this->deathOrder);
+        return $this->humans[$id];
     }
-    public function getHumanById(int $id)
+    public function getZombieById(int $id) : Zombie
     {
-        return $this->humans[$id] ?? false;
-    }
-    public function getZombieById(int $id)
-    {
-        return $this->zombies[$id] ?? false;
+        return $this->zombies[$id];
     }
 }
 }
@@ -398,6 +448,7 @@ namespace CodingGame\CodeVsZombies {
 use CodingGame\CodeVsZombies\Characters\Ash;
 use CodingGame\CodeVsZombies\Characters\Human;
 use CodingGame\CodeVsZombies\Characters\Zombie;
+use CodingGame\CodeVsZombies\Geometry\Coordinates;
 class State
 {
     private $ash;
@@ -410,15 +461,15 @@ class State
         fscanf(STDIN, "%d", $humanCount);
         for ($i = 0; $i < $humanCount; $i++) {
             fscanf(STDIN, "%d %d %d", $humanId, $humanX, $humanY);
-            $map->addHuman(new Human($humanId, $humanX, $humanY));
+            $map->addHuman(new Human($humanId, new Coordinates($humanX, $humanY)));
         }
         fscanf(STDIN, "%d", $zombieCount);
         for ($i = 0; $i < $zombieCount; $i++) {
             fscanf(STDIN, "%d %d %d %d %d", $zombieId, $zombieX, $zombieY, $zombieXNext, $zombieYNext);
-            $zombie = new Zombie($zombieId, $zombieX, $zombieY, $zombieXNext, $zombieYNext, $map->getHumans());
+            $zombie = new Zombie($zombieId, new Coordinates($zombieX, $zombieY), new Coordinates($zombieXNext, $zombieYNext), ...$map->getHumans());
             $map->addZombie($zombie);
         }
-        $this->ash = new Ash($x, $y, $map);
+        $this->ash = new Ash(new Coordinates($x, $y), $map);
         $this->ash->determineMove();
     }
     /**
@@ -427,7 +478,8 @@ class State
      */
     public function response() : string
     {
-        return $this->ash->getFutureX() . " " . $this->ash->getFutureY();
+        $coordinates = $this->ash->getFutureCoordinates();
+        return $coordinates->getX() . " " . $coordinates->getY();
     }
     public function clearState()
     {

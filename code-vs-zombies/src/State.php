@@ -7,6 +7,7 @@ namespace CodingGame\CodeVsZombies;
 use CodingGame\CodeVsZombies\Characters\Ash;
 use CodingGame\CodeVsZombies\Characters\Human;
 use CodingGame\CodeVsZombies\Characters\Zombie;
+use CodingGame\CodeVsZombies\Geometry\Coordinates;
 
 class State
 {
@@ -33,7 +34,7 @@ class State
                 $humanX,
                 $humanY
             );
-            $map->addHuman(new Human($humanId, $humanX, $humanY));
+            $map->addHuman(new Human($humanId, new Coordinates($humanX,$humanY)));
         }
 
         fscanf(STDIN, "%d",
@@ -48,14 +49,12 @@ class State
                 $zombieXNext,
                 $zombieYNext
             );
-            $zombie = new Zombie($zombieId,$zombieX,$zombieY,$zombieXNext, $zombieYNext, $map->getHumans());
+            $zombie = new Zombie($zombieId,new Coordinates($zombieX,$zombieY),new Coordinates($zombieXNext, $zombieYNext), ...$map->getHumans());
             $map->addZombie($zombie);
         }
 
-        $this->ash = new Ash($x, $y, $map);
+        $this->ash = new Ash(new Coordinates($x, $y), $map);
         $this->ash->determineMove();
-
-
     }
 
     /**
@@ -64,7 +63,9 @@ class State
      */
     public function response(): string
     {
-        return $this->ash->getFutureX() . " " . $this->ash->getFutureY();
+        $coordinates = $this->ash->getFutureCoordinates();
+
+        return $coordinates->getX() . " " . $coordinates->getY();
     }
 
     public function clearState()

@@ -2,9 +2,10 @@
 
 namespace CodingGame\CodeVsZombies\Characters;
 
+use CodingGame\CodeVsZombies\Geometry\Coordinates;
+
 interface Moveable{
 
-    public function getFutureX():int;
-    public function getFutureY():int;
+    public function getFutureCoordinates(): Coordinates;
     public function getMoveDistance():int;
 }

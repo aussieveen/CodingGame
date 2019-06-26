@@ -2,27 +2,32 @@
 
 namespace CodingGame\CodeVsZombies\Characters;
 
+use CodingGame\CodeVsZombies\Geometry\Coordinates;
+
 abstract class Character{
-    private $posX;
-    private $posY;
+
+    /**
+     * @var Coordinates
+     */
+    private $coordinates;
 
     /**
      * Character constructor.
-     * @param int $posX
-     * @param int $posY
+     * @param Coordinates $coordinates
+     * @internal param int $posX
+     * @internal param int $posY
      */
-    public function __construct(int $posX, int $posY)
+    public function __construct(Coordinates $coordinates)
     {
-        $this->posX = $posX;
-        $this->posY = $posY;
+        $this->coordinates = $coordinates;
     }
 
     /**
-     * @return mixed
+     * @return Coordinates
      */
-    public function getPosY():int
+    public function getCoordinates():Coordinates
     {
-        return $this->posY;
+        return $this->coordinates;
     }
 
     /**
@@ -30,6 +35,15 @@ abstract class Character{
      */
     public function getPosX():int
     {
-        return $this->posX;
+        return $this->coordinates->getX();
     }
+
+    /**
+     * @return mixed
+     */
+    public function getPosY():int
+    {
+        return $this->coordinates->getY();
+    }
+
 }

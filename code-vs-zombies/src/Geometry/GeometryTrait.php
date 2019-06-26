@@ -1,6 +1,6 @@
 <?php
 
-namespace CodingGame\CodeVsZombies;
+namespace CodingGame\CodeVsZombies\Geometry;
 
 use CodingGame\CodeVsZombies\Characters\Character;
 
@@ -9,13 +9,13 @@ trait Geometry{
         return sqrt(pow($char1->getPosX() - $char2->getPosX(), 2) + pow($char1->getPosY() - $char2->getPosY(), 2));
     }
 
-    function getCentroidCoordinates(Character ...$characters){
+    function getCentroidCoordinates(Character ...$characters):Coordinates{
         $xSum = 0;
         $ySum = 0;
         foreach($characters as $character){
             $xSum += $character->getPosX();
             $ySum += $character->getPosY();
         }
-        return ['x' => $xSum/count($characters), 'y' => $ySum/count($characters)];
+        return new Coordinates($xSum/count($characters),$ySum/count($characters));
     }
 }

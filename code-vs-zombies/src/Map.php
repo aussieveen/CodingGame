@@ -3,14 +3,11 @@
 
 namespace CodingGame\CodeVsZombies;
 
-use CodeInGame\CodeVsZombies\Debug;
 use CodingGame\CodeVsZombies\Characters\Human;
 use CodingGame\CodeVsZombies\Characters\Zombie;
 
 class Map
 {
-
-    use Geometry;
 
     private $zombies;
     private $humans;
@@ -23,20 +20,12 @@ class Map
 
     public function addZombie(Zombie $zombie)
     {
-        $this->zombies[$zombie->getId()] = $zombie;
+        $this->zombies[] = $zombie;
     }
 
     public function addHuman(Human $human)
     {
-        $this->humans[$human->getId()] = $human;
-    }
-
-    public function getDeathOrder()
-    {
-        if (empty($this->deathOrder)){
-            $this->calculateDeathOrder();
-        }
-        return $this->deathOrder;
+        $this->humans[] = $human;
     }
 
     public function getZombies():array
@@ -49,21 +38,15 @@ class Map
         return $this->humans;
     }
 
-    private function calculateDeathOrder():void
+    public function getHumanById(int $id): Human
     {
-        foreach($this->zombies as $zombieId => $zombie){
-            $this->deathOrder[$zombie->getTimeToTarget()][$zombie->getTargetId()][] = $zombieId;
-        }
-        ksort($this->deathOrder);
+        return $this->humans[$id];
     }
 
-    public function getHumanById(int $id)
-    {
-        return $this->humans[$id] ?? false;
+    public function getZombieById(int $id): Zombie{
+        return $this->zombies[$id];
     }
 
-    public function getZombieById(int $id){
-        return $this->zombies[$id] ?? false;
-    }
+
 
 }
