@@ -4,9 +4,10 @@
 namespace CodeInGame\CodeOfKutulu\Map;
 
 
+use CodingGame\CodeOfKutulu\Coordinates;
+
 class Map
 {
-
     const WALL = "#";
     const WANDERER = "w";
     const EMPTY = ".";
@@ -29,6 +30,10 @@ class Map
     {
         $this->grid[$this->rowCounter] = str_split($mapSymbols);
         $this->rowCounter++;
+    }
+
+    public function isWall(Coordinates $coordinates){
+        return $this->grid[$coordinates->getY()][$coordinates->getX()] === self::WALL;
     }
 
 }
