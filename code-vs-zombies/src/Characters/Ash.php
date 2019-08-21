@@ -3,160 +3,143 @@
 
 namespace CodingGame\CodeVsZombies\Characters;
 
-use CodeInGame\CodeVsZombies\Debug;
-use CodingGame\CodeVsZombies\DeathOrder;
-use CodingGame\CodeVsZombies\Geometry\Coordinates;
 use CodingGame\CodeVsZombies\Geometry\Geometry;
 use CodingGame\CodeVsZombies\Map;
-
 class Ash extends Character implements Moveable, Attacker
 {
-
     use Geometry;
-
     const MOVE_DISTANCE = 1000;
     const KILL_DISTANCE = 2000;
-
-    private $futureCoodinates;
-
+    private $futureX;
+    private $futureY;
     /**
      * @var Map
      */
     private $map;
     private $moveNotSet;
-    private $deathOrder;
-
     /**
      * Ash constructor.
-     * @param Coordinates $coordinates
+     * @param int $posX
+     * @param int $posY
      * @param Map $map
-     * @internal param int $posX
-     * @internal param int $posY
      */
-    public function __construct(Coordinates $coordinates, Map $map)
+    public function __construct(int $posX, int $posY, Map $map)
     {
-        parent::__construct($coordinates);
+        parent::__construct($posX, $posY);
         $this->map = $map;
-        $this->deathOrder = new DeathOrder($map);
         $this->moveNotSet = true;
     }
-
-
-    public function getFutureCoordinates():Coordinates
-    {
-        return $this->futureCoodinates;
-    }
-
     /**
      * @return int
      */
-    public function getMoveDistance():int
+    public function getFutureX() : int
+    {
+        return $this->futureX;
+    }
+    /**
+     * @return int
+     */
+    public function getFutureY() : int
+    {
+        return $this->futureY;
+    }
+    /**
+     * @return int
+     */
+    public function getMoveDistance() : int
     {
         return self::MOVE_DISTANCE;
     }
-
     /**
      * @return int
      */
-    public function getKillDistance():int
+    public function getKillDistance() : int
     {
         return self::KILL_DISTANCE;
     }
-
-    /**
-     * Loops through strategy functions until the coordinates Ash should move to are set.
-     */
     public function determineMove()
     {
-
         $this->targetLastZombie();
-
         if ($this->moveNotSet) {
             $this->betweenAllHumansAndZombies();
         }
-
         if ($this->moveNotSet) {
             $this->protectLastHuman();
         }
-
         if ($this->moveNotSet) {
             $this->saveClosestHumanToDeath();
         }
-
         if ($this->moveNotSet) {
             $this->targetLargestZombieCluster();
         }
     }
-
-    /**
-     * Only one zombie lives. Kill it!
-     */
     private function targetLastZombie()
     {
-        $this->moveToLastCharacter(...$this->map->getZombies());
-    }
-
-    /**
-     * Move to protect the last human on the map
-     */
-    private function protectLastHuman()
-    {
-        $this->moveToLastCharacter(...$this->map->getHumans());
-
-    }
-
-    /**
-     * @param Character[] ...$characters
-     */
-    private function moveToLastCharacter(Character ...$characters)
-    {
-        if (count($characters) === 1) {
-            $character = reset($characters);
-            $this->futureCoodinates = $character->getCoordinates();
+        $zombies = $this->map->getZombies();
+        if (count($zombies) === 1) {
+            $zombie = reset($zombies);
+            $this->futureX = $zombie->getPosX();
+            $this->futureY = $zombie->getPosY();
             $this->moveNotSet = false;
         }
     }
-
-    /**
-     * Determine if Ash is able to reach all humans before a zombie can. If so, target largest cluster of zombies
-     */
     private function betweenAllHumansAndZombies()
     {
         $humans = $this->map->getHumans();
-        $longestTimeToReachHuman = 0;
+        $longestRescueTime = 0;
         foreach ($humans as $human) {
             $timeToReachHuman = $this->timeToReachCharacter($human);
-            if ($longestTimeToReachHuman < $timeToReachHuman) {
-                $longestTimeToReachHuman = $timeToReachHuman;
+            if ($longestRescueTime < $timeToReachHuman) {
+                $longestRescueTime = $timeToReachHuman;
             }
         }
-
-        if ($this->deathOrder->getSoonestDeath() > $longestTimeToReachHuman) {
-            $this->targetLargestZombieCluster();
+        if (array_key_first($this->map->getDeathOrder()) > $longestRescueTime) {
+            $longestKillTime = 10000;
+            $firstDeath = reset($this->map->getDeathOrder());
+            foreach ($firstDeath as $zombies) {
+                foreach ($zombies as $zombieId) {
+                    $zombie = $this->map->getZombieById($zombieId);
+                    $timeToReachZombie = $this->timeToReachCharacter($zombie);
+                    if ($timeToReachZombie < $longestKillTime) {
+                        $targetZombie = $zombie;
+                        $longestKillTime = $timeToReachZombie;
+                    }
+                }
+            }
+            $this->futureX = $targetZombie->getPosX();
+            $this->futureY = $targetZombie->getPosY();
+            $this->moveNotSet = false;
         }
     }
-
-    /**
-     * Move towards the human nearest to death that can be saved.
-     */
+    private function protectLastHuman()
+    {
+        $humans = $this->map->getHumans();
+        if (count($humans) === 1) {
+            $human = reset($humans);
+            $this->futureX = $human->getPosX();
+            $this->futureY = $human->getPosY();
+        }
+    }
+    private function timeToReachCharacter(Character $character)
+    {
+        return ($this->distanceBetweenCharacters($this, $character) - 2000) / self::MOVE_DISTANCE;
+    }
     private function saveClosestHumanToDeath()
     {
-        foreach ($this->deathOrder->get() as $timeToDeath => $humanIds) {
-            foreach ($humanIds as $humanId) {
+        $humanDeathOrder = $this->map->getDeathOrder();
+        foreach ($humanDeathOrder as $timeToDeath => $humans) {
+            foreach ($humans as $humanId => $zombiesTargetingHuman) {
                 $human = $this->map->getHumanById($humanId);
                 $timeToReachHuman = $this->timeToReachCharacter($human);
-                if ($timeToDeath >= $timeToReachHuman) {
-                    $this->futureCoodinates = $human->getCoordinates();
+                if ($timeToDeath > $timeToReachHuman) {
+                    $this->futureX = $human->getPosX();
+                    $this->futureY = $human->getPosY();
                     $this->moveNotSet = false;
                     break 2;
                 }
             }
         }
     }
-
-    /**
-     * Get the central point of the largest zombie cluster and move towards it.
-     */
     private function targetLargestZombieCluster()
     {
         $zombies = $this->map->getZombies();
@@ -176,18 +159,9 @@ class Ash extends Character implements Moveable, Attacker
                 $largestCluster = $clusterSize;
             }
         }
-
-        $this->futureCoodinates = $this->getCentroidCoordinates(...$targetCluster);
+        $centroidCoordinates = $this->getCentroidCoordinates(...$targetCluster);
+        $this->futureX = $centroidCoordinates['x'];
+        $this->futureY = $centroidCoordinates['y'];
         $this->moveNotSet = false;
     }
-
-    /**
-     * @param Character $character
-     * @return int
-     */
-    private function timeToReachCharacter(Character $character):int
-    {
-        return ceil(($this->distanceBetweenCharacters($this, $character) - self::KILL_DISTANCE) / self::MOVE_DISTANCE);
-    }
-
 }

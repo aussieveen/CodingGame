@@ -4,6 +4,8 @@
 namespace CodingGame\CodeVsZombies;
 
 
+use CodeInGame\CodeVsZombies\Debug;
+
 class DeathOrder
 {
     private $deathOrder;

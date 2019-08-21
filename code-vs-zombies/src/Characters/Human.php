@@ -4,24 +4,21 @@ namespace CodingGame\CodeVsZombies\Characters;
 
 use CodingGame\CodeVsZombies\Geometry\Coordinates;
 
-class Human extends Character implements Identifiable {
-
+class Human extends Character implements Identifiable
+{
     private $id;
-
     /**
      * Human constructor.
      * @param int $id
-     * @param Coordinates $coordinates
-     * @internal param int $posX
-     * @internal param int $posY
+     * @param int $posX
+     * @param int $posY
      */
-    public function __construct(int $id, Coordinates $coordinates)
+    public function __construct(int $id, int $posX, int $posY)
     {
-        parent::__construct($coordinates);
+        parent::__construct($posX, $posY);
         $this->id = $id;
-}
-
-    public function getId():int
+    }
+    public function getId() : int
     {
         return $this->id;
     }
