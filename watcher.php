@@ -27,5 +27,5 @@ function loadFilepath(string $relativeFilepath): string
 
 function runCompiler(string $mapperLocation, string $outputLocation): void
 {
-    shell_exec("sh vendor/bin/classpreloader.php compile --config {$mapperLocation} --output $outputLocation");
+    shell_exec("php vendor/bin/classpreloader.php compile --config {$mapperLocation} --output $outputLocation");
 }

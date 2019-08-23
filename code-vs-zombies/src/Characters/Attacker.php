@@ -2,6 +2,7 @@
 
 namespace CodingGame\CodeVsZombies\Characters;
 
-interface Attacker{
-    public function getKillDistance():int;
+interface Attacker
+{
+    public function getKillDistance(): int;
 }

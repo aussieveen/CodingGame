@@ -2,10 +2,10 @@
 
 namespace CodingGame\CodeVsZombies;
 
-$state = new State();
+$game = new Game();
 // game loop
 while (TRUE) {
-    $state->clearState();
-    $state->update();
-    echo $state->response() . "\n";
+    $game->clearState();
+    $game->update();
+    echo $game->response() . "\n";
 }

@@ -5,11 +5,12 @@ namespace CodingGame\CodeVsZombies\Characters;
 
 use CodingGame\CodeVsZombies\Geometry\Geometry;
 use CodingGame\CodeVsZombies\Map;
+
 class Ash extends Character implements Moveable, Attacker
 {
     use Geometry;
-    const MOVE_DISTANCE = 1000;
-    const KILL_DISTANCE = 2000;
+    private const MOVE_DISTANCE = 1000;
+    private const KILL_DISTANCE = 2000;
     private $futureX;
     private $futureY;
     /**
@@ -17,6 +18,7 @@ class Ash extends Character implements Moveable, Attacker
      */
     private $map;
     private $moveNotSet;
+
     /**
      * Ash constructor.
      * @param int $posX
@@ -29,34 +31,39 @@ class Ash extends Character implements Moveable, Attacker
         $this->map = $map;
         $this->moveNotSet = true;
     }
+
     /**
      * @return int
      */
-    public function getFutureX() : int
+    public function getFutureX(): int
     {
         return $this->futureX;
     }
+
     /**
      * @return int
      */
-    public function getFutureY() : int
+    public function getFutureY(): int
     {
         return $this->futureY;
     }
+
     /**
      * @return int
      */
-    public function getMoveDistance() : int
+    public function getMoveDistance(): int
     {
         return self::MOVE_DISTANCE;
     }
+
     /**
      * @return int
      */
-    public function getKillDistance() : int
+    public function getKillDistance(): int
     {
         return self::KILL_DISTANCE;
     }
+
     public function determineMove()
     {
         $this->targetLastZombie();
@@ -73,6 +80,7 @@ class Ash extends Character implements Moveable, Attacker
             $this->targetLargestZombieCluster();
         }
     }
+
     private function targetLastZombie()
     {
         $zombies = $this->map->getZombies();
@@ -83,6 +91,7 @@ class Ash extends Character implements Moveable, Attacker
             $this->moveNotSet = false;
         }
     }
+
     private function betweenAllHumansAndZombies()
     {
         $humans = $this->map->getHumans();
@@ -111,6 +120,7 @@ class Ash extends Character implements Moveable, Attacker
             $this->moveNotSet = false;
         }
     }
+
     private function protectLastHuman()
     {
         $humans = $this->map->getHumans();
@@ -120,10 +130,12 @@ class Ash extends Character implements Moveable, Attacker
             $this->futureY = $human->getPosY();
         }
     }
+
     private function timeToReachCharacter(Character $character)
     {
         return ($this->distanceBetweenCharacters($this, $character) - 2000) / self::MOVE_DISTANCE;
     }
+
     private function saveClosestHumanToDeath()
     {
         $humanDeathOrder = $this->map->getDeathOrder();
@@ -140,6 +152,7 @@ class Ash extends Character implements Moveable, Attacker
             }
         }
     }
+
     private function targetLargestZombieCluster()
     {
         $zombies = $this->map->getZombies();

@@ -6,6 +6,7 @@ abstract class Character
 {
     private $posX;
     private $posY;
+
     /**
      * Character constructor.
      * @param int $posX
@@ -16,17 +17,19 @@ abstract class Character
         $this->posX = $posX;
         $this->posY = $posY;
     }
+
     /**
      * @return mixed
      */
-    public function getPosY() : int
+    public function getPosY(): int
     {
         return $this->posY;
     }
+
     /**
      * @return mixed
      */
-    public function getPosX() : int
+    public function getPosX(): int
     {
         return $this->posX;
     }

@@ -7,6 +7,7 @@ use CodingGame\CodeVsZombies\Geometry\Coordinates;
 class Human extends Character implements Identifiable
 {
     private $id;
+
     /**
      * Human constructor.
      * @param int $id
@@ -18,7 +19,8 @@ class Human extends Character implements Identifiable
         parent::__construct($posX, $posY);
         $this->id = $id;
     }
-    public function getId() : int
+
+    public function getId(): int
     {
         return $this->id;
     }

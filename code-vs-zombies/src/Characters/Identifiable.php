@@ -6,5 +6,5 @@ namespace CodingGame\CodeVsZombies\Characters;
 
 interface Identifiable
 {
-    public function getId():int;
+    public function getId(): int;
 }

@@ -5,8 +5,8 @@ use CodingGame\CodeVsZombies\Map;
 class Ash extends Character implements Moveable, Attacker
 {
     use Geometry;
-    const MOVE_DISTANCE = 1000;
-    const KILL_DISTANCE = 2000;
+    private const MOVE_DISTANCE = 1000;
+    private const KILL_DISTANCE = 2000;
     private $futureX;
     private $futureY;
     /**
@@ -203,6 +203,12 @@ abstract class Character
 }
 }
 
+namespace CodeInGame\CodeVsZombies\Collection {
+class ZombieTargetable
+{
+}
+}
+
 namespace CodingGame\CodeVsZombies\Characters {
 use CodingGame\CodeVsZombies\Geometry\Coordinates;
 class Human extends Character implements Identifiable
@@ -245,8 +251,8 @@ use CodingGame\CodeVsZombies\Geometry\Geometry;
 class Zombie extends Character implements Moveable, Identifiable, Attacker
 {
     use Geometry;
-    const MOVE_DISTANCE = 400;
-    const KILL_DISTANCE = 400;
+    private const MOVE_DISTANCE = 400;
+    private const KILL_DISTANCE = 0;
     private $id;
     private $futureX;
     private $futureY;
@@ -330,15 +336,58 @@ class Debug
 }
 }
 
+namespace CodingGame\CodeVsZombies {
+use CodingGame\CodeVsZombies\Characters\Ash;
+use CodingGame\CodeVsZombies\Characters\Human;
+use CodingGame\CodeVsZombies\Characters\Zombie;
+class Game
+{
+    private $ash;
+    private $humans;
+    private $zombies;
+    public function update()
+    {
+        $map = new Map();
+        fscanf(STDIN, "%d %d", $x, $y);
+        fscanf(STDIN, "%d", $humanCount);
+        for ($i = 0; $i < $humanCount; $i++) {
+            fscanf(STDIN, "%d %d %d", $humanId, $humanX, $humanY);
+            $map->addHuman(new Human($humanId, $humanX, $humanY));
+        }
+        fscanf(STDIN, "%d", $zombieCount);
+        for ($i = 0; $i < $zombieCount; $i++) {
+            fscanf(STDIN, "%d %d %d %d %d", $zombieId, $zombieX, $zombieY, $zombieXNext, $zombieYNext);
+            $zombie = new Zombie($zombieId, $zombieX, $zombieY, $zombieXNext, $zombieYNext, $map->getHumans());
+            $map->addZombie($zombie);
+        }
+        $this->ash = new Ash($x, $y, $map);
+        $this->ash->determineMove();
+    }
+    /**
+     * @return string Format "X Y" coordinate for Ash to move.
+     *
+     */
+    public function response() : string
+    {
+        return $this->ash->getFutureX() . ' ' . $this->ash->getFutureY();
+    }
+    public function clearState()
+    {
+        $this->humans = [];
+        $this->zombies = [];
+    }
+}
+}
+
 namespace CodingGame\CodeVsZombies\Geometry {
 use CodingGame\CodeVsZombies\Characters\Character;
 trait Geometry
 {
-    function distanceBetweenCharacters(Character $char1, Character $char2) : float
+    public function distanceBetweenCharacters(Character $char1, Character $char2) : float
     {
-        return sqrt(pow($char1->getPosX() - $char2->getPosX(), 2) + pow($char1->getPosY() - $char2->getPosY(), 2));
+        return sqrt(($char1->getPosX() - $char2->getPosX()) ** 2 + ($char1->getPosY() - $char2->getPosY()) ** 2);
     }
-    function getCentroidCoordinates(Character ...$characters)
+    public function getCentroidCoordinates(Character ...$characters) : array
     {
         $xSum = 0;
         $ySum = 0;
@@ -405,55 +454,12 @@ class Map
 }
 
 namespace CodingGame\CodeVsZombies {
-$state = new State();
+$game = new Game();
 // game loop
 while (TRUE) {
-    $state->clearState();
-    $state->update();
-    echo $state->response() . "\n";
-}
-}
-
-namespace CodingGame\CodeVsZombies {
-use CodingGame\CodeVsZombies\Characters\Ash;
-use CodingGame\CodeVsZombies\Characters\Human;
-use CodingGame\CodeVsZombies\Characters\Zombie;
-class State
-{
-    private $ash;
-    private $humans;
-    private $zombies;
-    public function update()
-    {
-        $map = new Map();
-        fscanf(STDIN, "%d %d", $x, $y);
-        fscanf(STDIN, "%d", $humanCount);
-        for ($i = 0; $i < $humanCount; $i++) {
-            fscanf(STDIN, "%d %d %d", $humanId, $humanX, $humanY);
-            $map->addHuman(new Human($humanId, $humanX, $humanY));
-        }
-        fscanf(STDIN, "%d", $zombieCount);
-        for ($i = 0; $i < $zombieCount; $i++) {
-            fscanf(STDIN, "%d %d %d %d %d", $zombieId, $zombieX, $zombieY, $zombieXNext, $zombieYNext);
-            $zombie = new Zombie($zombieId, $zombieX, $zombieY, $zombieXNext, $zombieYNext, $map->getHumans());
-            $map->addZombie($zombie);
-        }
-        $this->ash = new Ash($x, $y, $map);
-        $this->ash->determineMove();
-    }
-    /**
-     * @return string Format "X Y" coordinate for Ash to move.
-     *
-     */
-    public function response() : string
-    {
-        return $this->ash->getFutureX() . " " . $this->ash->getFutureY();
-    }
-    public function clearState()
-    {
-        $this->humans = [];
-        $this->zombies = [];
-    }
+    $game->clearState();
+    $game->update();
+    echo $game->response() . "\n";
 }
 }
 

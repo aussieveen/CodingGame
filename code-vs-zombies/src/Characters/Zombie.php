@@ -9,13 +9,14 @@ use CodingGame\CodeVsZombies\Geometry\Geometry;
 class Zombie extends Character implements Moveable, Identifiable, Attacker
 {
     use Geometry;
-    const MOVE_DISTANCE = 400;
-    const KILL_DISTANCE = 400;
+    private const MOVE_DISTANCE = 400;
+    private const KILL_DISTANCE = 0;
     private $id;
     private $futureX;
     private $futureY;
     private $targetId;
     private $timeToTarget = 100000;
+
     public function __construct(int $id, int $posX, int $posY, int $futureX, int $futureY, array $humans)
     {
         parent::__construct($posX, $posY);
@@ -30,31 +31,38 @@ class Zombie extends Character implements Moveable, Identifiable, Attacker
             }
         }
     }
-    public function getFutureX() : int
+
+    public function getFutureX(): int
     {
         return $this->futureX;
     }
-    public function getFutureY() : int
+
+    public function getFutureY(): int
     {
         return $this->futureY;
     }
-    public function getId() : int
+
+    public function getId(): int
     {
         return $this->id;
     }
-    public function getMoveDistance() : int
+
+    public function getMoveDistance(): int
     {
         return self::MOVE_DISTANCE;
     }
-    public function getKillDistance() : int
+
+    public function getKillDistance(): int
     {
         return self::KILL_DISTANCE;
     }
-    public function getTimeToTarget() : int
+
+    public function getTimeToTarget(): int
     {
         return $this->timeToTarget;
     }
-    public function getTargetId() : int
+
+    public function getTargetId(): int
     {
         return $this->targetId;
     }

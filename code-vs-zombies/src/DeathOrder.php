@@ -12,7 +12,7 @@ class DeathOrder
 
     public function __construct(Map $map)
     {
-        foreach($map->getZombies() as $zombie){
+        foreach ($map->getZombies() as $zombie) {
             $this->deathOrder[$zombie->getTimeToTarget()][] = $zombie->getTargetId();
         }
         ksort($this->deathOrder);
@@ -23,7 +23,8 @@ class DeathOrder
         return $this->deathOrder;
     }
 
-    public function getSoonestDeath(){
+    public function getSoonestDeath()
+    {
         return array_key_first($this->deathOrder);
     }
 }

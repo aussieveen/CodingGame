@@ -6,11 +6,12 @@ use CodingGame\CodeVsZombies\Characters\Character;
 
 trait Geometry
 {
-    function distanceBetweenCharacters(Character $char1, Character $char2) : float
+    public function distanceBetweenCharacters(Character $char1, Character $char2): float
     {
-        return sqrt(pow($char1->getPosX() - $char2->getPosX(), 2) + pow($char1->getPosY() - $char2->getPosY(), 2));
+        return sqrt((($char1->getPosX() - $char2->getPosX()) ** 2) + (($char1->getPosY() - $char2->getPosY()) ** 2));
     }
-    function getCentroidCoordinates(Character ...$characters)
+
+    public function getCentroidCoordinates(Character ...$characters): array
     {
         $xSum = 0;
         $ySum = 0;

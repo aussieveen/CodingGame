@@ -2,7 +2,8 @@
 
 namespace CodingGame\CodeVsZombies\Characters;
 
-interface Moveable{
+interface Moveable
+{
 
-    public function getMoveDistance():int;
+    public function getMoveDistance(): int;
 }
