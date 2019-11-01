@@ -4,17 +4,12 @@
 namespace CodingGame\XmasRush\Item;
 
 use CodingGame\XmasRush\Interfaces\Positionable;
+use CodingGame\XmasRush\Point;
 
 class BoardItem extends Item implements Positionable
 {
-    /**
-     * @var int
-     */
-    private $x;
-    /**
-     * @var int
-     */
-    private $y;
+
+    private $point;
 
     /**
      * BoardItem constructor.
@@ -25,26 +20,14 @@ class BoardItem extends Item implements Positionable
      */
     public function __construct(string $name, int $x, int $y, int $playerId)
     {
-        $this->x = $x;
-        $this->y = $y;
+        $this->point = new Point($x, $y);
 
         parent::__construct($name, $playerId);
     }
 
-    /**
-     * @return int
-     */
-    public function getX(): int
+    public function getPoint(): Point
     {
-        return $this->x;
-    }
-
-    /**
-     * @return int
-     */
-    public function getY(): int
-    {
-        return $this->y;
+        return $this->point;
     }
 
     /**
@@ -69,6 +52,6 @@ class BoardItem extends Item implements Positionable
      */
     private function onUserTile($expectedValue): bool
     {
-        return $this->x === $expectedValue && $this->y === $expectedValue;
+        return $this->point->getX() === $expectedValue && $this->point->getY() === $expectedValue;
     }
 }

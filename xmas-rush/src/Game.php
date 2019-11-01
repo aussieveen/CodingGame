@@ -5,10 +5,12 @@ namespace CodingGame\XmasRush;
 
 
 use CodingGame\XmasRush\Board\Board;
+use CodingGame\XmasRush\Board\Path;
+use CodingGame\XmasRush\Board\PathCollection;
 use CodingGame\XmasRush\Interfaces\Positionable;
+use CodingGame\XmasRush\Item\BoardItem;
 use CodingGame\XmasRush\Item\BoardItemCollection;
 use CodingGame\XmasRush\Item\Item;
-use CodingGame\XmasRush\Item\ItemCollection;
 use CodingGame\XmasRush\Item\QuestItemCollection;
 use CodingGame\XmasRush\Player\Player;
 
@@ -48,6 +50,10 @@ class Game
      * @var ItemCollection
      */
     private $questItemCollection;
+    /**
+     * @var array
+     */
+    private $pathCollection;
 
 
     /**
@@ -61,8 +67,8 @@ class Game
         $this->opponent = $opponent;
 
         $this->board = new Board();
-        $this->boardItemCollection = new ItemCollection();
-        $this->questItemCollection = new ItemCollection();
+        $this->boardItemCollection = new BoardItemCollection();
+        $this->questItemCollection = new QuestItemCollection();
     }
 
     public function setTurnType(int $turnType): void
@@ -85,12 +91,12 @@ class Game
         return $this->opponent;
     }
 
-    public function getBoardItemCollection() : ItemCollection
+    public function getBoardItemCollection() : BoardItemCollection
     {
         return $this->boardItemCollection;
     }
 
-    public function getQuestItemCollection() : ItemCollection
+    public function getQuestItemCollection() : QuestItemCollection
     {
         return $this->questItemCollection;
     }
@@ -113,26 +119,13 @@ class Game
             return $this->pushPositionableOffEdge($this->player);
         }
 
-        $playerQuestItems = new QuestItemCollection();
-        $playerBoardItems = new BoardItemCollection();
 
-        foreach($this->questItemCollection as $questItem){
-            if (!$this->isOpponentItem($questItem)){
-                $playerQuestItems->add($questItem);
-            }
-        }
 
-        foreach($this->getBoardItemCollection()->get() as $boardItem)
-        {
-            if (!$this->isOpponentItem($boardItem)){
-                $playerBoardItems->add($boardItem);
-            }
-        }
 
         //MOVE REVEALLED QUEST ITEM FROM BOARD INTO POSSESSION
-        foreach($playerQuestItems as $questItem)
+        foreach($this->getPlayerQuestItems() as $questItem)
         {
-            foreach($playerBoardItems as $boardItem){
+            foreach($this->getPlayerBoardItems() as $boardItem){
                 if ($boardItem->getName() !== $questItem->getName()){
                     continue;
                 }
@@ -143,25 +136,42 @@ class Game
             }
         }
 
+        //MOVE PLAYER ONTO COLLECTABLE ITEM PATH
 
-        //MOVE REVEALLED QUEST ITEM INTO SHORTEST PATH
 
         //MOVE PLAYER COLLECTABLE ITEM INTO PATH
 
         //MOVE PLAYER QUEST REVEALLED BOARD ITEM TOWARDS EDGE
+
+        return "PUSH 1 DOWN\n";
     }
 
     private function getMoveTurn() : string
     {
+        $playerPoint = $this->player->getPoint();
         //IF POSSESS ITEM, GET TO EDGE
         if ($this->playerHasQuestItemInPossession()){
-
-            if ($this->player->getX() === 0 || $this->player->getY() === 0){
+            if ($playerPoint->getX() === 0 || $playerPoint->getY() === 0){
                 return "PASS\n";
+            }
+        }
+        $this->pathCollection = new PathCollection($this->board);
+        $path = $this->pathCollection->getPathForPoint($playerPoint);
+
+        if ($path->isPointOnPath(new Point(2,2))){
+            $directions = $path->getDirectionsForPointAToPointB($playerPoint, new Point(2,2));
+            if ($directions){
+                $output = 'MOVE';
+                $steps = explode(',', rtrim($directions,","), 20);
+                foreach($steps as $step){
+                    $output .= ' ' . $step;
+                }
+                return $output . "\n";
             }
         }
 
         //GET POSSIBLE PATH COORDS
+
 
         //COLLECT ITEMS
 
@@ -171,6 +181,32 @@ class Game
         return "PASS\n";
     }
 
+    private function getPlayerQuestItems():QuestItemCollection
+    {
+        $playerQuestItems = new QuestItemCollection();
+        foreach($this->questItemCollection as $questItem){
+            if (!$this->isOpponentItem($questItem)){
+                $playerQuestItems->add($questItem);
+            }
+        }
+        return $playerQuestItems;
+    }
+
+    private function getPlayerBoardItems():BoardItemCollection
+    {
+        $playerBoardItems = new BoardItemCollection();
+        foreach($this->getBoardItemCollection() as $boardItem)
+        {
+            if ($this->isOpponentItem($boardItem)){
+                continue;
+            }
+
+            $playerBoardItems->add($boardItem);
+        }
+
+        return $playerBoardItems;
+    }
+
     private function isOpponentItem(Item $item): bool
     {
         return $item->getPlayerId() === self::OPPONENT_ID;
@@ -178,7 +214,7 @@ class Game
 
     private function playerHasQuestItemInPossession(): bool
     {
-        foreach ($this->boardItemCollection->get() as $boardItem) {
+        foreach ($this->boardItemCollection as $boardItem) {
             if ($boardItem->onPlayerTile() && $boardItem->getPlayerId() === self::PLAYER_ID) {
                 return true;
             }
@@ -187,25 +223,53 @@ class Game
     }
 
     private function positionableOnBoardEdge(Positionable $object){
-        return in_array($object->getX(), [0,6], true) || in_array($object->getY(), [0,6], true);
+        $point = $object->getPoint();
+        return in_array($point->getX(), [0,6], true) || in_array($point->getY(), [0,6], true);
     }
 
     private function pushPositionableOffEdge(Positionable $object): string {
-        if (0 === $object->getX()) {
-            return sprintf(self::PUSH_STRING_FORMAT, $object->getY(), 'LEFT');
+        $point = $object->getPoint();
+        if (0 === $point->getX()) {
+            return sprintf(self::PUSH_STRING_FORMAT, $point->getY(), 'LEFT');
         }
 
-        if (6 === $object->getX()) {
-            return sprintf(self::PUSH_STRING_FORMAT, $object->getY(), 'RIGHT');
+        if (6 === $point->getX()) {
+            return sprintf(self::PUSH_STRING_FORMAT, $point->getY(), 'RIGHT');
         }
 
-        if (0 === $object->getY()){
-            return sprintf(self::PUSH_STRING_FORMAT, $object->getX(), 'UP');
+        if (0 === $point->getY()){
+            return sprintf(self::PUSH_STRING_FORMAT, $point->getX(), 'UP');
         }
 
-        if (6 === $object->getY()){
-            return sprintf(self::PUSH_STRING_FORMAT, $object->getX(), 'DOWN');
+        if (6 === $point->getY()){
+            return sprintf(self::PUSH_STRING_FORMAT, $point->getX(), 'DOWN');
         }
         return '';
     }
+
+    private function position(Positionable $object): int {
+        $point = $object->getPoint();
+        $x = $point->getX();
+        $y = $point->getY();
+        return min(6 - $x, $y - 6, $x, $y);
+    }
+
+    private function getMovesToGetPositionableCloserToEdge(Positionable $object):array
+    {
+        $point = $object->getPoint();
+        $x = $point->getX();
+        $y = $point->getY();
+        $moves = [];
+        foreach([
+                    [6 - $x, 'RIGHT', $x],
+                    [$x, 'LEFT', $x],
+                    [6 - $y, 'DOWN', $y],
+                    [$y, 'UP', $y]
+                ] as $moveOptions) {
+            $moves[$moveOptions[0][] = sprintf(self::PUSH_STRING_FORMAT, $moveOptions[2], $moveOptions[1])];
+        }
+        return $moves;
+    }
+
+
 }

@@ -3,9 +3,10 @@
 
 namespace CodingGame\XmasRush\Interfaces;
 
+use CodingGame\XmasRush\Point;
 
 interface Positionable
 {
-    public function getX():int;
-    public function getY():int;
+    public function getPoint():Point;
+
 }

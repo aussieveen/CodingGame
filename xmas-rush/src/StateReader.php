@@ -47,7 +47,7 @@ class StateReader
             $inputs = explode(" ", fgets(STDIN));
             for ($j = 0; $j < 7; $j++)
             {
-                $this->game->getBoard()->set($i,$j,new Tile($inputs[$j]));
+                $this->game->getBoard()->set($j,$i,new Tile($inputs[$j]));
 
             }
         }
