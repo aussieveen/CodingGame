@@ -119,9 +119,6 @@ class Game
             return $this->pushPositionableOffEdge($this->player);
         }
 
-
-
-
         //MOVE REVEALLED QUEST ITEM FROM BOARD INTO POSSESSION
         foreach($this->getPlayerQuestItems() as $questItem)
         {
@@ -158,20 +155,24 @@ class Game
         $this->pathCollection = new PathCollection($this->board);
         $path = $this->pathCollection->getPathForPoint($playerPoint);
 
-        if ($path->isPointOnPath(new Point(2,2))){
-            $directions = $path->getDirectionsForPointAToPointB($playerPoint, new Point(2,2));
-            if ($directions){
-                $output = 'MOVE';
-                $steps = explode(',', rtrim($directions,","), 20);
-                foreach($steps as $step){
-                    $output .= ' ' . $step;
+        $questItemsOnBoard = $this->getPlayerQuestItemsOnBoard();
+        if (!empty($questItemsOnBoard)){
+            foreach($questItemsOnBoard as $boardItem){
+                if ($path->isPointOnPath($boardItem->getPoint())){
+                    $directions = $path->getDirectionsForPointAToPointB($playerPoint, $boardItem->getPoint());
+                    if ($directions){
+                        $output = 'MOVE';
+                        $steps = explode(',', rtrim($directions,","), 20);
+                        foreach($steps as $step){
+                            $output .= ' ' . $step;
+                        }
+                        return $output . "\n";
+                    }
                 }
-                return $output . "\n";
             }
         }
 
         //GET POSSIBLE PATH COORDS
-
 
         //COLLECT ITEMS
 
@@ -205,6 +206,22 @@ class Game
         }
 
         return $playerBoardItems;
+    }
+
+    private function getPlayerQuestItemsOnBoard():BoardItemCollection
+    {
+        $playerQuestItems = $this->getPlayerQuestItems();
+        $playerBoardItems = $this->getPlayerBoardItems();
+        $questOnBoardItems = new BoardItemCollection();
+        foreach($playerQuestItems as $playerQuestItem){
+            foreach($playerBoardItems as $playerBoardItem){
+                if ($playerBoardItem->getName() === $playerQuestItem->getName()){
+                    $questOnBoardItems->add($playerBoardItem);
+                    continue 2;
+                }
+            }
+        }
+        return $questOnBoardItems;
     }
 
     private function isOpponentItem(Item $item): bool

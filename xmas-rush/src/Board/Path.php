@@ -25,49 +25,30 @@ class Path
         $this->visitedPoints = [];
 
         while (!empty($this->queue)){
-            $examiningPoint = $this->queue[0];
+            $currentPoint = $this->queue[0];
             array_shift($this->queue);
-            $this->visitedPoints[] = $examiningPoint->getId();
+            $this->visitedPoints[] = $currentPoint->getId();
 
-            $tile = $board->getTile($examiningPoint);
-            if ($tile === null){
-                continue;
-            }
-
-            if ($tile->hasUpPath()
-                && ($p = $board->getPointAbove($examiningPoint)) instanceof Point
-                && ($pTile = $board->getTile($p)) instanceof Tile
-                && $pTile->hasDownPath()
-            )
+            if ($this->hasConnectingPathUp($currentPoint))
             {
-                $this->addPointToQueue($p);
+                $this->addPointToQueue($this->board->getPointAbove($currentPoint));
             }
 
-            if ($tile->hasDownPath()
-                && ($p = $board->getPointBelow($examiningPoint)) instanceof Point
-                && ($pTile = $board->getTile($p)) instanceof Tile
-                && $pTile->hasUpPath())
+            if ($this->hasConnectingPathDown($currentPoint))
             {
-                $this->addPointToQueue($p);
+                $this->addPointToQueue($this->board->getPointBelow($currentPoint));
             }
 
-            if ($tile->hasLeftPath()
-                && ($p = $board->getPointToLeft($examiningPoint)) instanceof Point
-                && ($pTile = $board->getTile($p)) instanceof Tile
-                && $pTile->hasRightPath())
+            if ($this->hasConnectingPathLeft($currentPoint))
             {
-                $this->addPointToQueue($p);
+                $this->addPointToQueue($this->board->getPointToLeft($currentPoint));
             }
 
-            if ($tile->hasRightPath()
-                && ($p = $board->getPointToRight($examiningPoint)) instanceof Point
-                && ($pTile = $board->getTile($p)) instanceof Tile
-                && $pTile->hasLeftPath())
+            if ($this->hasConnectingPathRight($currentPoint))
             {
-                $this->addPointToQueue($p);
+                $this->addPointToQueue($this->board->getPointToRight($currentPoint));
             }
-
-            $this->pointsOnPath[] = $examiningPoint;
+            $this->pointsOnPath[] = $currentPoint;
         }
     }
 
@@ -95,18 +76,9 @@ class Path
             array_shift($this->queue);
             $this->visitedPoints[] = $currentPoint->getId();
 
-
-            $tile = $this->board->getTile($currentPoint);
-            if ($tile === null){
-                continue;
-            }
-
-            if ($tile->hasUpPath()
-                && ($p = $this->board->getPointAbove($currentPoint)) instanceof Point
-                && ($pTile = $this->board->getTile($p)) instanceof Tile
-                && $pTile->hasDownPath()
-            )
+            if ($this->hasConnectingPathUp($currentPoint))
             {
+                $p = $this->board->getPointAbove($currentPoint);
                 $this->addPointToQueue($p);
                 $directionsTo[$p->getId()] = $directionsTo[$currentPoint->getID()] . 'UP,';
                 if ($p->getId() === $pointB->getId()){
@@ -114,11 +86,9 @@ class Path
                 }
             }
 
-            if ($tile->hasDownPath()
-                && ($p = $this->board->getPointBelow($currentPoint)) instanceof Point
-                && ($pTile = $this->board->getTile($p)) instanceof Tile
-                && $pTile->hasUpPath())
+            if ($this->hasConnectingPathDown($currentPoint))
             {
+                $p = $this->board->getPointBelow($currentPoint);
                 $this->addPointToQueue($p);
                 $directionsTo[$p->getId()] = $directionsTo[$currentPoint->getID()] . 'DOWN,';
                 if ($p->getId() === $pointB->getId()){
@@ -126,11 +96,9 @@ class Path
                 }
             }
 
-            if ($tile->hasLeftPath()
-                && ($p = $this->board->getPointToLeft($currentPoint)) instanceof Point
-                && ($pTile = $this->board->getTile($p)) instanceof Tile
-                && $pTile->hasRightPath())
+            if ($this->hasConnectingPathLeft($currentPoint))
             {
+                $p = $this->board->getPointToLeft($currentPoint);
                 $this->addPointToQueue($p);
                 $directionsTo[$p->getId()] = $directionsTo[$currentPoint->getID()] . 'LEFT,';
                 if ($p->getId() === $pointB->getId()){
@@ -138,11 +106,9 @@ class Path
                 }
             }
 
-            if ($tile->hasRightPath()
-                && ($p = $this->board->getPointToRight($currentPoint)) instanceof Point
-                && ($pTile = $this->board->getTile($p)) instanceof Tile
-                && $pTile->hasLeftPath())
+            if ($this->hasConnectingPathRight($currentPoint))
             {
+                $p = $this->board->getPointToRight($currentPoint);
                 $this->addPointToQueue($p);
                 $directionsTo[$p->getId()] = $directionsTo[$currentPoint->getID()] . 'RIGHT,';
                 if ($p->getId() === $pointB->getId()){
@@ -151,6 +117,38 @@ class Path
             }
         }
         return '';
+    }
+
+    private function hasConnectingPathUp(Point $point){
+        $tile = $this->board->getTile($point);
+        return $tile->hasUpPath()
+        && ($p = $this->board->getPointAbove($point)) instanceof Point
+        && ($pTile = $this->board->getTile($p)) instanceof Tile
+        && $pTile->hasDownPath();
+    }
+
+    private function hasConnectingPathDown(Point $point){
+        $tile = $this->board->getTile($point);
+        return $tile->hasDownPath()
+        && ($p = $this->board->getPointBelow($point)) instanceof Point
+        && ($pTile = $this->board->getTile($p)) instanceof Tile
+        && $pTile->hasUpPath();
+    }
+
+    private function hasConnectingPathLeft(Point $point){
+        $tile = $this->board->getTile($point);
+        return $tile->hasLeftPath()
+        && ($p = $this->board->getPointToLeft($point)) instanceof Point
+        && ($pTile = $this->board->getTile($p)) instanceof Tile
+        && $pTile->hasRightPath();
+    }
+
+    private function hasConnectingPathRight(Point $point){
+        $tile = $this->board->getTile($point);
+        return $tile->hasRightPath()
+        && ($p = $this->board->getPointToRight($point)) instanceof Point
+        && ($pTile = $this->board->getTile($p)) instanceof Tile
+        && $pTile->hasLeftPath();
     }
 
     private function addPointToQueue(Point $p) : void
