@@ -2,8 +2,11 @@
 
 namespace CodingGame\XmasRush\Player;
 
+use CodingGame\XmasRush\Board\Board;
 use CodingGame\XmasRush\Board\Tile;
 use CodingGame\XmasRush\Interfaces\Positionable;
+use CodingGame\XmasRush\Item\BoardItemCollection;
+use CodingGame\XmasRush\Item\QuestItemCollection;
 use CodingGame\XmasRush\Point;
 
 class Player implements Positionable
@@ -16,6 +19,20 @@ class Player implements Positionable
      * @var Point
      */
     private $point;
+
+    /**
+     * @var int
+     */
+    private $id;
+
+    private $questItems;
+
+    private $boardItems;
+
+    public function __construct(int $id)
+    {
+        $this->id = $id;
+    }
 
     public function updateState(int $numberOfQuests, int $x, int $y, Tile $tile): void
     {
@@ -45,4 +62,43 @@ class Player implements Positionable
     {
         return $this->point;
     }
+
+    public function getId(): int
+    {
+        return $this->id;
+    }
+
+    /**
+     * @return mixed
+     */
+    public function getQuestItems() : QuestItemCollection
+    {
+        return $this->questItems;
+    }
+
+    /**
+     * @param mixed $questItems
+     */
+    public function setQuestItems(QuestItemCollection $questItems): void
+    {
+        $this->questItems = $questItems;
+    }
+
+    /**
+     * @return mixed
+     */
+    public function getBoardItems() : BoardItemCollection
+    {
+        return $this->boardItems;
+    }
+
+    /**
+     * @param mixed $boardItems
+     */
+    public function setBoardItems(BoardItemCollection $boardItems): void
+    {
+        $this->boardItems = $boardItems;
+    }
+
+
 }

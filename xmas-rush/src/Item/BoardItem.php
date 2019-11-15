@@ -30,28 +30,8 @@ class BoardItem extends Item implements Positionable
         return $this->point;
     }
 
-    /**
-     * @return bool
-     */
-    public function onPlayerTile(): bool
+    public function inPossession():bool
     {
-        return $this->onUserTile(-1);
-    }
-
-    /**
-     * @return bool
-     */
-    public function onOpponentTile(): bool
-    {
-        return $this->onUserTile(-2);
-    }
-
-    /**
-     * @param $expectedValue
-     * @return bool
-     */
-    private function onUserTile($expectedValue): bool
-    {
-        return $this->point->getX() === $expectedValue && $this->point->getY() === $expectedValue;
+        return $this->point->getX() < 0 && $this->point->getY() < 0;
     }
 }

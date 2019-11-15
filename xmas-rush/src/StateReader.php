@@ -16,6 +16,7 @@ class StateReader
 
     /**
      * StateReader constructor.
+     * @param Game $game
      */
     public function __construct(Game $game)
     {
@@ -81,6 +82,7 @@ class StateReader
         fscanf(STDIN, "%d",
             $numItems // the total number of items available on board and on player tiles
         );
+        $boardItems = [];
         for ($i = 0; $i < $numItems; $i++)
         {
             fscanf(STDIN, "%s %d %d %d",
@@ -89,8 +91,9 @@ class StateReader
                 $itemY,
                 $itemPlayerId
             );
-            $this->game->getBoardItemCollection()->add(new BoardItem($itemName, $itemX, $itemY, $itemPlayerId));
+            $boardItems[] = new BoardItem($itemName, $itemX, $itemY, $itemPlayerId);
         }
+        $this->game->setBoardItems($boardItems);
     }
 
     private function updateQuestsState(): void
@@ -98,14 +101,16 @@ class StateReader
         fscanf(STDIN, "%d",
             $numQuests // the total number of revealed quests for both players
         );
+        $questItems = [];
         for ($i = 0; $i < $numQuests; $i++)
         {
             fscanf(STDIN, "%s %d",
                 $questItemName,
                 $questPlayerId
             );
-            $this->game->getQuestItemCollection()->add(new Item($questItemName, $questPlayerId));
+            $questItems[] = new Item($questItemName, $questPlayerId);
         }
+        $this->game->setQuestItems($questItems);
     }
 
 
