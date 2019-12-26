@@ -36,9 +36,10 @@ class StateReader
     private function updateGameState(): void
     {
         fscanf(STDIN, "%d",
-            $turnType
+            $actionType
         );
-        $this->game->setTurnType($turnType);
+
+        $this->game->setActionType($actionType);
     }
 
     private function updateBoardState(): void
@@ -93,7 +94,7 @@ class StateReader
             );
             $boardItems[] = new BoardItem($itemName, $itemX, $itemY, $itemPlayerId);
         }
-        $this->game->setBoardItems($boardItems);
+        $this->game->setBoardItems(...$boardItems);
     }
 
     private function updateQuestsState(): void
@@ -110,9 +111,6 @@ class StateReader
             );
             $questItems[] = new Item($questItemName, $questPlayerId);
         }
-        $this->game->setQuestItems($questItems);
+        $this->game->setQuestItems(...$questItems);
     }
-
-
-
 }

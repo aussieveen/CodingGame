@@ -5,16 +5,11 @@ namespace CodingGame\XmasRush\Turns;
 
 use CodingGame\XmasRush\Board\PathCollection;
 
-class Move extends Turn
+class Move extends Action
 {
     public const ID = 1;
 
-    /**
-     * @var PathCollection
-     */
-    private $pathCollection;
-
-    public function getTurn(): string
+    public function getAction(): string
     {
         $playerPoint = $this->player->getPoint();
         //IF POSSESS ITEM, GET TO EDGE
@@ -23,8 +18,6 @@ class Move extends Turn
                 return "PASS\n";
             }
         }
-
-        $this->pathCollection = new PathCollection($this->board);
         $path = $this->pathCollection->getPathForPoint($playerPoint);
 
         $questItemsOnBoard = $this->getQuestItemsOnBoardForPlayer($this->player);

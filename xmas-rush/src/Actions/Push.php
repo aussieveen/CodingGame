@@ -5,13 +5,13 @@ namespace CodingGame\XmasRush\Turns;
 
 use CodingGame\XmasRush\Interfaces\Positionable;
 
-class Push extends Turn
+class Push extends Action
 {
     public const ID = 0;
 
     private const PUSH_STRING_FORMAT = "PUSH %d %s\n";
 
-    public function getTurn(): string
+    public function getAction(): string
     {
         if ($this->hasQuestItemOnPossessedTile($this->player) && $this->positionableOnBoardEdge($this->player)){
             return $this->pushPositionableOffEdge($this->player);
@@ -26,14 +26,22 @@ class Push extends Turn
                 }
         }
 
-        //MOVE PLAYER ONTO COLLECTABLE ITEM PATH
+        //MOVE OPPONENT PLAYER ITEM OUT OF THEIR PATH WHILST HOPEFULLY NOT WRECKING SELF
+        $opponentBoardItems = $this->getQuestItemsOnBoardForPlayer($this->opponent);
+        foreach($opponentBoardItems as $boardItem){
+            $path = $this->pathCollection->getPathForPoint($boardItem->getPoint());
+            if ($path->isPointOnPath($this->opponent->getPoint())){
 
+            }
+        }
+
+        //MOVE PLAYER ONTO COLLECTABLE ITEM PATH
 
         //MOVE PLAYER COLLECTABLE ITEM INTO PATH
 
         //MOVE PLAYER QUEST REVEALLED BOARD ITEM TOWARDS EDGE
 
-        //MOVE OPPONENT PLAYER ITEM OUT OF THEIR PATH
+
 
         return "PUSH 1 DOWN\n";
     }
@@ -57,4 +65,10 @@ class Push extends Turn
         }
         return '';
     }
+
+    public static function getId()
+    {
+        return self::ID;
+    }
+
 }

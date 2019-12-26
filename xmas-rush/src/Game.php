@@ -5,13 +5,10 @@ namespace CodingGame\XmasRush;
 
 
 use CodingGame\XmasRush\Board\Board;
-use CodingGame\XmasRush\Board\PathCollection;
-use CodingGame\XmasRush\Interfaces\Positionable;
 use CodingGame\XmasRush\Item\BoardItem;
 use CodingGame\XmasRush\Item\BoardItemCollection;
 use CodingGame\XmasRush\Item\Item;
 use CodingGame\XmasRush\Item\QuestItemCollection;
-use CodingGame\XmasRush\Player\Opponent;
 use CodingGame\XmasRush\Player\Player;
 use CodingGame\XmasRush\Turns\Move;
 use CodingGame\XmasRush\Turns\Push;
@@ -24,7 +21,7 @@ class Game
      */
     private $player;
     /**
-     * @var Opponent
+     * @var Player
      */
     private $opponent;
     /**
@@ -35,7 +32,7 @@ class Game
     /**
      * @var Push
      */
-    private $turn;
+    private $action;
 
 
     /**
@@ -51,14 +48,15 @@ class Game
         $this->board = new Board();
     }
 
-    public function setTurnType(int $turnType): void
+    public function setActionType(int $actionType): void
     {
-        switch($turnType){
-            case $turnType === Push::ID:
-                $this->turn = new Push($this->board,$this->player, $this->opponent);
+        switch($actionType){
+            case Push::ID:
+                $this->action = new Push($this->board,$this->player, $this->opponent);
                 break;
-            case $turnType === Move::ID;
-                $this->turn = new Move($this->board,$this->player, $this->opponent);
+            case Move::ID;
+                $this->action = new Move($this->board,$this->player, $this->opponent);
+                break;
         }
     }
 
@@ -79,17 +77,17 @@ class Game
 
     public function setBoardItems(BoardItem ...$boardItems):void
     {
-        $playerBoardItemCollection = new BoardItemCollection();
-        $opponentBoardItemCollection = new BoardItemCollection();
-        foreach($boardItems as $boardItem){
-            if($boardItem->getPlayerId() === $this->player->getId()){
-                $playerBoardItemCollection->add($boardItem);
-            }else{
-                $opponentBoardItemCollection->add($boardItem);
+        foreach($boardItems as $boardItem) {
+            if ($boardItem->inPossession()){
+                $boardItemPoint = $boardItem->getPoint();
+                ($boardItemPoint->getX() === -1 && $boardItemPoint->getY() === -1) ?
+                    $this->player->setBoardItem($boardItem) :
+                    $this->opponent->setBoardItem($boardItem);
+            }else {
+                $this->board->setBoardItem($boardItem);
             }
         }
-        $this->player->setBoardItems($playerBoardItemCollection);
-        $this->opponent->setBoardItems($opponentBoardItemCollection);
+
     }
 
     public function setQuestItems(Item ...$questItems):void
@@ -107,9 +105,9 @@ class Game
         $this->opponent->setQuestItems($opponentQuestItemCollection);
     }
 
-    public function getPlayerActions() : string
+    public function getPlayerAction() : string
     {
-        return $this->turn->getTurn();
+        return $this->action->getAction();
     }
 
     public function clear() : void

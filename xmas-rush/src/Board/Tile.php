@@ -4,12 +4,15 @@
 namespace CodingGame\XmasRush\Board;
 
 
+use CodingGame\XmasRush\Item\BoardItem;
+
 class Tile
 {
     private $upPath;
     private $rightPath;
     private $downPath;
     private $leftPath;
+    private $boardItem = null;
 
     /**
      * Tile constructor.
@@ -54,5 +57,15 @@ class Tile
     public function hasLeftPath() : bool
     {
         return $this->leftPath;
+    }
+
+    public function setBoardItem(BoardItem $boardItem)
+    {
+        $this->boardItem = $boardItem;
+    }
+
+    public function getBoardItem(): ?BoardItem
+    {
+        return $this->boardItem;
     }
 }

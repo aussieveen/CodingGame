@@ -30,6 +30,6 @@ function scanFilepath($filepathBase): array
 
         $completeList[] = $value;
     }
-
+    var_dump($completeList);
     return $completeList;
 }

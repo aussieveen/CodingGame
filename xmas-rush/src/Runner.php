@@ -9,8 +9,6 @@ $stateReader = new StateReader($game);
 while (TRUE)
 {
     $stateReader->updateState();
-    echo $game->getPlayerActions();
-
+    echo $game->getPlayerAction();
     $game->clear();
 }
-?>
