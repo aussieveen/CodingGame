@@ -20,10 +20,10 @@ class CardEvaluator
         $statPoints = $this->getStatPoints($card);
         $abilityPoints = $this->getAbilityPoints($card);
         $ownerHealthChange = $card->getOwnerHealthChange() > 0 ? $card->getOwnerHealthChange() / 2 : 0;
-        $opponentHealthChange = $card->getOpponentHealthChange() < 0 ? -$card->getOpponentHealthChange() : 0;
+        $opponentHealthChange = $card->getOpponentHealthChange() < 0 ? -$card->getOpponentHealthChange() / 2 : 0;
         $cardDraw = $card->getDraw();
         $sum = $statPoints + $abilityPoints + $ownerHealthChange + $opponentHealthChange + $cardDraw;
-        $score = $sum;
+        $score = $card->getCost() === 0 ? $sum++ : $sum / $card->getCost();
 
         new Debug([
             'attack' => $card->getAttack(),
@@ -41,30 +41,43 @@ class CardEvaluator
         return $score;
     }
 
+    /**
+     * @param Card $card
+     * @return float
+     *
+     * According to game -
+     * Charge worth 0.5 mana
+     * Guard worth 0.5 mana
+     * Breakthrough worth 1 mana
+     */
     private function getAbilityPoints(Card $card): float
     {
         $points = 0;
         $abilities = $this->abilityReader->readCardAbilities($card);
+
         foreach($abilities as $ability){
             switch($ability){
                 case ($ability === Abilities::BREAKTHROUGH):
-                    $points += $card->getAttack() / $card->getHealth();
+                    $points++;
                     break;
                 case ($ability === Abilities::CHARGE):
-                    $points += ($card->getAttack() * 1.1) / $card->getHealth();
-                    break;
                 case ($ability === Abilities::GUARD):
-                    $points += $card->getHealth() * 1.05;
+                    $points += 0.5;
                     break;
             }
         }
+
         return $points;
     }
 
+    /**
+     * @param Card $card
+     * @return float
+     *
+     * Current assumption that 1 heath/attack = 0.5 mana
+     */
     private function getStatPoints(Card $card): float
     {
-        $manaCostPer2Points = ($card->getAttack() + $card->getHealth()) / 2;
-        $healthDiff = $card->getHealth() - $card->getAttack();
-        return $healthDiff <= 0 ? $manaCostPer2Points : $manaCostPer2Points - ($healthDiff/10);
+        return ($card->getAttack() + $card->getHealth()) / 2;
     }
 }
