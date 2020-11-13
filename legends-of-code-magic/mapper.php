@@ -1,7 +1,7 @@
 <?php
 
 $files = scanFilepath(__DIR__ . '/src/');
-
+var_dump($files);
 return $files;
 
 function scanFilepath($filepathBase): array

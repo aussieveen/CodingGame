@@ -2,10 +2,8 @@
 
 namespace CodingGame\LegendsOfCodeMagic\Card;
 
-
 class CardFactory
 {
-
     private $dictionary =
         [
             1 => [1, 'Slimer', 'creature', 1, 2, 1, '------', 1, 0, 0, 'Summon: You gain 1 health.'],

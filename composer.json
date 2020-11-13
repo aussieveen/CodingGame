@@ -11,15 +11,21 @@
     ],
     "autoload": {
         "psr-4": {
-            "CodeInGame\\LegendsOfCodeMagic\\": "legends-of-code-magic/src"
+            "CodingGame\\LegendsOfCodeMagic\\": "legends-of-code-magic/src"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Tests\\": "tests"
         }
     },
     "require-dev": {
-        "phpunit/phpunit": "^7"
+        "phpunit/phpunit": "^9",
+        "mockery/mockery": "^1.4"
     },
     "require": {
-        "classpreloader/classpreloader": "^3.2",
-        "classpreloader/console": "^2.0",
+        "classpreloader/classpreloader": "^4.0",
+        "classpreloader/console": "^3.0",
         "jasonlewis/resource-watcher": "^1.2"
     },
     "scripts": {
